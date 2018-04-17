@@ -6,7 +6,12 @@
 
 #include "libstringbuilder.h"
 
+#define _sballoc() \
+  (struct string_builder *)calloc(1, sizeof(struct string_builder))
 
+
+/** エラー出力
+ */
 static int eprintf(FILE *strm,
     const char *fn,
     const char *param) {
@@ -17,6 +22,10 @@ static int eprintf(FILE *strm,
 }
 
 
+/** 連続した (struct string_builder *)->next の最後のポインタを取得
+ * > struct string_builder *this: 検索対象
+ * < struct string_builder *
+ */
 static struct string_builder *
 _last_pointer(struct string_builder *this) {
   struct string_builder *sb = NULL,
@@ -34,9 +43,12 @@ _last_pointer(struct string_builder *this) {
   return sb;
 }
 
-#define _sballoc() \
-  (struct string_builder *)calloc(1, sizeof(struct string_builder))
 
+/**
+ * 新規 struct string_builder * の割当
+ *
+ * > void
+ * < struct string_builder * */
 struct string_builder *
 string_builder_new(void) {
   struct string_builder *sb = NULL;
@@ -49,6 +61,11 @@ string_builder_new(void) {
   return sb;
 }
 
+/**
+ * struct string_builder * の解放
+ *
+ * > struct string_builder *this: 対象ポインタ
+ * < void */
 void
 string_builder_free(struct string_builder *this) {
   struct string_builder *sb = this, *next = NULL;
@@ -70,6 +87,13 @@ string_builder_free(struct string_builder *this) {
   }
 }
 
+/**
+ * struct string_builder * 追加
+ *
+ * > struct string_builder *this: 追加対象
+ * > const char *str: 追加する文字列
+ * < struct string_builder *: 追加した struct string_builder のポインタ
+ */
 struct string_builder *
 string_builder_append(struct string_builder *this,
     const char *str) {
@@ -103,6 +127,13 @@ end:
   return new;
 }
 
+
+/**
+ * 現在のサイズを取得
+ *
+ * > const struct string_builder *this: 対象
+ * < size_t
+ */
 size_t
 string_builder_length(const struct string_builder *this) {
   const struct string_builder *sb = this;
@@ -120,8 +151,14 @@ string_builder_length(const struct string_builder *this) {
   return size;
 }
 
+// NOTE: 解放(free) が必要
+/**
+ * 格納された文字列データを結合して出力
+ *
+ * > const struct string_builder *this
+ * < char *: 新規に割り当てられた char * */
 char *
-string_builder_to_string(const struct string_builder *this) {
+tring_builder_to_string(const struct string_builder *this) {
   const struct string_builder *sb;
 
   size_t size;
@@ -133,6 +170,7 @@ string_builder_to_string(const struct string_builder *this) {
   size = string_builder_length(this);
 
   if((buf = (char *)calloc(size, sizeof(char))) == NULL) {
+    eprintf(stderr, "calloc(3)", NULL);
     goto end;
   }
 
