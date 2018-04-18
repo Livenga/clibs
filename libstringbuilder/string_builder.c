@@ -158,7 +158,7 @@ string_builder_length(const struct string_builder *this) {
  * > const struct string_builder *this
  * < char *: 新規に割り当てられた char * */
 char *
-tring_builder_to_string(const struct string_builder *this) {
+string_builder_to_string(const struct string_builder *this) {
   const struct string_builder *sb;
 
   size_t size;
