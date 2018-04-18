@@ -17,7 +17,7 @@ json_object_to_string(const struct json_object *this) {
   __string_buffer_t *sb, *sb_next;
 
 
-  if(this == NULL || this->member == NULL) {
+  if(this == NULL) {
     return NULL;
   }
 

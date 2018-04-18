@@ -106,7 +106,7 @@ json_string_new(const char *key, const char *value);
 extern struct json_common *
 json_add(struct json_common *this, struct json_common *target);
 
-extern struct json_object *
+extern struct json_common *
 json_add_member(struct json_object *this, struct json_common *target);
 
 extern struct json_array *

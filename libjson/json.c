@@ -89,16 +89,19 @@ json_add(struct json_common *this, struct json_common *target) {
   return target;
 }
 
-struct json_object *
+struct json_common *
 json_add_member(struct json_object *this, struct json_common *target) {
   if(this == NULL || target == NULL)
     return NULL;
 
   if(this->member == NULL) {
     this->member = target;
+  } else {
+    struct json_common *jm = _get_last_value(this->member);
+    json_add(jm, target);
   }
 
-  return this;
+  return target;
 }
 
 
