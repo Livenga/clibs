@@ -1,12 +1,19 @@
-CC = gcc
-FLAGS = -g -Wall -O2
-OPTS  = -L../ -I../
-LINKS = -ljson
+CC        = gcc
+FLAGS     = -g -Wall -O2
 
-SRC = $(shell find . -name \*.c)
+LINK_PATH = ..\
+						../../libstringbuilder/
+
+INCLUDE_PATH = ..
+
+LINKS = -ljson -lstringbuilder
+#SRC   = $(shell find . -name \*.c)
+SRC   = main.c
 
 all:
-	$(CC) -o main $(SRC) $(OPTS) $(FLAGS) $(LINKS)
+	$(CC) -o main $(SRC) \
+		$(addprefix -L, $(LINK_PATH)) $(addprefix -I, $(INCLUDE_PATH)) \
+		$(FLAGS) $(LINKS) 
 
 run:
-	@LD_LIBRARY_PATH=../ ./main
+	@LD_LIBRARY_PATH=../:../../libstringbuilder/ ./main
