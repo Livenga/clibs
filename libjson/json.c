@@ -28,8 +28,9 @@ _get_last_value(struct json_common *this) {
   struct json_common *p = this, *p_cursor = NULL;
 
 
-  if(p == NULL)
+  if(p == NULL) {
     return NULL;
+  }
 
   for(; p != NULL; p = p->next) {
     //printf("%p\n", p);
@@ -54,27 +55,6 @@ _get_type(const int type) {
   return "Unknown";
 }
 
-static struct json_common *
-json_value_free(struct json_common *p) {
-
-  // この関数では object, array は開放しない.
-  if(p == NULL || p->type == OBJECT || p->type == ARRAY) return p;
-
-  if(p->type == STRING) {
-    struct json_string *p_str = NULL;
-
-    p_str = _JSON_PTR(string, p);
-
-    memset((void *)p_str->value, '\0', p->size);
-    free((void *)p_str);
-    p_str = NULL;
-  }
-
-  free((void *)p);
-  p = NULL;
-
-  return NULL;
-}
 
 
 struct json_common *
@@ -95,8 +75,7 @@ json_add(struct json_common *this, struct json_common *target) {
   // その場所以前に key が存在していた場合は, 重複ができてしまう.
   for(; p_cursor != NULL; p_cursor = p_cursor->next) {
     if(strncmp(p_cursor->key, target->key, __JSON_KEY_SIZE) == 0) {
-      fprintf(stderr, "指定されたキーは既に登録されています.\n");
-
+      //fprintf(stderr, "指定されたキーは既に登録されています.\n");
       json_value_free(target);
       return this;
     }
@@ -121,6 +100,31 @@ json_add_member(struct json_object *this, struct json_common *target) {
 
   return this;
 }
+
+
+struct json_common *
+json_array_add_item(struct json_array *this, struct json_common *target) {
+  struct json_common *p, *p_cursor;
+
+
+  if(this == NULL || target == NULL) {
+    return NULL;
+  }
+
+  p_cursor = this->items;
+  if(p_cursor == NULL) {
+    this->items = target;
+  } else {
+    for(; p_cursor != NULL; p_cursor = p_cursor->next) {
+      p = p_cursor;
+    }
+
+    p->next = target;
+  }
+
+  return target;
+}
+
 
 struct json_object *
 json_object_new(const char *key) {
@@ -154,6 +158,108 @@ error:
   return NULL;
 }
 
+struct json_array *
+json_array_new(const char *key) {
+  struct json_array *p;
+
+  
+  if(key != NULL && strlen(key) < 1) {
+    //fprintf(stderr, "");
+    return NULL;
+  }
+
+  p = (struct json_array *)calloc(1, sizeof(struct json_array));
+
+  strncpy(p->key, key, __JSON_KEY_SIZE);
+
+  p->type = ARRAY;
+  p->size = 0;
+  p->next = NULL;
+  p->add  = json_add;
+
+  return p;
+}
+
+
+struct json_array *
+json_array_add(struct json_array *this, struct json_common *target) {
+  struct json_common *p_cursor = NULL, *p_next = NULL;
+
+
+  if(this == NULL || target == NULL) {
+    return this;
+  }
+
+  if(this->items != NULL) {
+    for(p_cursor = this->items; p_cursor != NULL; p_cursor = p_cursor->next) {
+      p_next = p_cursor;
+    }
+
+    p_next->next = target;
+  } else {
+    this->items = target;
+  }
+
+  return this;
+}
+
+
+struct json_common *
+json_common_alloc(const int type, const size_t size, const char *key) {
+  struct json_common *jc = NULL;
+
+  switch(type) {
+    case STRING:
+      jc = _json_alloc(struct json_string);
+      break;
+
+    case NUMBER:
+      jc = _json_alloc(struct json_number);
+      break;
+
+    case DOUBLE:
+      jc = _json_alloc(struct json_double);
+      break;
+
+    case OBJECT:
+      jc = _json_alloc(struct json_object);
+      break;
+
+    case ARRAY:
+      jc = _json_alloc(struct json_array);
+      break;
+
+    case BOOLEAN:
+      jc = _json_alloc(struct json_boolean);
+      break;
+
+    case NIL:
+      jc = _json_alloc(struct json_common);
+      break;
+
+    default:
+      // fprintf(stderr, "");
+      break;
+  }
+
+  if(jc == NULL) {
+    // fprintf(stderr, "");
+    goto end;
+  }
+
+  jc->type = type;
+  jc->size = size;
+  strncpy((char *)jc->key, key, __JSON_KEY_SIZE);
+
+  jc->add  = json_add;
+  jc->next = NULL;
+
+end:
+  return jc;
+}
+
+
+
 struct json_common *
 json_value_new(const int type, const size_t size,
     const char *key, const void *value) {
@@ -166,45 +272,41 @@ json_value_new(const int type, const size_t size,
     return NULL;
   }
 
+  jvalue = json_common_alloc(type, size, key);
+  _throw(jvalue, error);
 
   switch(type) {
     case STRING:
-      jvalue = _json_alloc(struct json_string);
-      _throw(jvalue, error);
+      jvalue->size = sizeof(char *) * strlen((const char *)value);
+      _JSON_PTR(string, jvalue)->value = (char *)calloc(jvalue->size, sizeof(char));
+      memmove(_JSON_PTR(string, jvalue)->value, value, jvalue->size);
+      break;
 
-      jvalue->type  = type;
-      jvalue->size  = size;
-      _JSON_PTR(string, jvalue)->value = (char *)calloc(size, sizeof(char));
-      memmove(_JSON_PTR(string, jvalue)->value, value, size);
+    case BOOLEAN:
+      jvalue->size = sizeof(bool_t);
+      memcpy((void *)&_JSON_PTR(number, jvalue)->value, value, sizeof(bool_t));
       break;
 
     case NUMBER:
-      jvalue = _json_alloc(struct json_value);
-      _throw(jvalue, error);
-
-      jvalue->type = type;
       jvalue->size = sizeof(long);
       memcpy((void *)&_JSON_PTR(number, jvalue)->value, value, sizeof(long));
       //memmove(jvalue->value, value, sizeof(long));
       break;
 
     case DOUBLE:
-      jvalue = _json_alloc(struct json_value);
-      _throw(jvalue, error);
-
-      jvalue->type = type;
       jvalue->size = sizeof(double);
       memcpy((void *)&_JSON_PTR(double, jvalue)->value, value, sizeof(double));
       //memmove(jvalue->value, value, sizeof(double));
       break;
 
-    case NIL:
-      jvalue = _json_alloc(struct json_value);
-      _throw(jvalue, error);
+    case ARRAY:
+      jvalue->size = 1;
+      _JSON_PTR(array, jvalue)->items = NULL;
+      break;
 
+    case NIL:
       jvalue->type  = NIL;
       jvalue->size  = 0;
-      _JSON_PTR(value, jvalue)->value = NULL;
       break;
 
     default:
@@ -212,11 +314,6 @@ json_value_new(const int type, const size_t size,
   }
 
   //
-  jvalue->add = json_add;
-  jvalue->next = NULL;
-  // key
-  strncpy(jvalue->key, key, __JSON_KEY_SIZE);
-
 
   return jvalue;
 
@@ -224,13 +321,94 @@ error:
   return NULL;
 }
 
+struct json_number *
+json_number_new(const char *key, const long value) {
+  return (struct json_number *)json_value_new(NUMBER, sizeof(long), key, (void *)&value);
+}
+
+struct json_double *
+json_double_new(const char *key, const double value) {
+  return (struct json_double *)json_value_new(DOUBLE, sizeof(double), key, (void *)&value);
+}
+
+struct json_boolean *
+json_boolean_new(const char *key, const bool_t value) {
+  return (struct json_boolean *)json_value_new(BOOLEAN, sizeof(bool_t), key, (void *)&value);
+}
+
+struct json_string *
+json_string_new(const char *key, const char *value) {
+  return (struct json_string *)json_value_new(STRING, sizeof(char) * strlen(value), key, (void *)value);
+}
+
+
+struct json_common *
+json_value_free(struct json_common *p) {
+  // この関数では object, array は開放しない.
+  if(p == NULL || p->type == OBJECT || p->type == ARRAY) {
+    return p;
+  }
+
+  if(p->type == STRING) {
+    struct json_string *p_str = NULL;
+
+    p_str = _JSON_PTR(string, p);
+
+    memset((void *)p_str->value, '\0', p_str->size);
+    free((void *)p_str->value);
+    p_str->value = NULL;
+  }
+
+  free((void *)p);
+  p = NULL;
+
+  return NULL;
+}
+
+
+void
+json_array_free(struct json_array *jarr) {
+  struct json_common *p, *p_next;
+
+
+  if(jarr == NULL || jarr->items == NULL) {
+    //fprintf(stderr, "");
+    return;
+  }
+
+  p = jarr->items;
+  while(p != NULL) {
+    p_next = p->next;
+
+    switch(p->type) {
+      case OBJECT:
+        json_object_free((struct json_object *)p);
+        break;
+
+      case ARRAY:
+        json_array_free((struct json_array *)p);
+        break;
+
+      default:
+        json_value_free(p);
+        break;
+    }
+
+    p = p_next;
+  }
+}
+
 
 void
 json_object_free(struct json_object *jo) {
-  struct json_common *p = jo->member,
+  struct json_common *p      = NULL,
                      *p_next = NULL;
+
+
   if(jo == NULL)
     return;
+
+  p = jo->member;
 
   while(p != NULL) {
     p_next = p->next;
@@ -244,7 +422,8 @@ json_object_free(struct json_object *jo) {
         break;
 
       default:
-        json_value_free((struct json_common *)p);
+        json_value_free(p);
+        break;
     }
 
     p = p_next;
@@ -259,13 +438,33 @@ json_object_free(struct json_object *jo) {
 
 
 size_t
-json_count(const struct json_object *jo) {
+json_object_count(const struct json_object *jo) {
   size_t count;
-  struct json_common *p = jo->member;
+  struct json_common *p = NULL;
+
 
   if(jo == NULL || jo->member == NULL)
     return -1;
 
+  p      = jo->member;
+  count = 0L;
+  for(; p != NULL; p = p->next) {
+    ++count;
+  }
+
+  return count;
+}
+
+size_t
+json_array_count(const struct json_array *ja) {
+  size_t count;
+  struct json_common *p;
+
+  if(ja == NULL || ja->items == NULL) {
+    return -1;
+  }
+
+  p     = ja->items;
   count = 0L;
   for(; p != NULL; p = p->next) {
     ++count;
@@ -307,47 +506,4 @@ json_object_get_value(const struct json_object *jo, const char *key) {
   }
 
   return NULL;
-}
-
-
-static size_t num_indent = 1;
-void
-json_print(const struct json_object *jo) {
-  size_t i;
-  struct json_common *p;
-
-
-  if(jo == NULL || jo->member == NULL)
-    return;
-
-  for(p = jo->member; p != NULL; p = p->next) {
-    for(i = 1; i < num_indent; ++i)
-      putchar('\t');
-
-    if(p->type == OBJECT) {
-      ++num_indent;
-      json_print((const struct json_object *)p);
-    }
-
-    switch(p->type) {
-      case STRING:
-        printf("Type: %s, Key: %s, Value: %s\n",
-            _get_type(p->type), p->key, _JSON_PTR(string, p)->value);
-        break;
-
-      case NUMBER:
-        printf("Type: %s, Key: %s, Value: %ld\n",
-            _get_type(p->type), p->key, _JSON_PTR(number, p)->value);
-        break;
-
-      case DOUBLE:
-        printf("Type: %s, Key: %s, Value: %f\n",
-            _get_type(p->type), p->key, _JSON_PTR(double, p)->value);
-        break;
-    }
-  }
-
-  if(num_indent > 1) {
-    --num_indent;
-  }
 }

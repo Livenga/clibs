@@ -48,6 +48,11 @@ struct json_string {
   string_t value;
 };
 
+struct json_boolean {
+  __JSON_COMMON();
+  bool_t value;
+};
+
 struct json_number {
   __JSON_COMMON();
   long value;
@@ -58,22 +63,70 @@ struct json_double {
   double value;
 };
 
+struct json_array {
+  __JSON_COMMON();
+  struct json_common *items;
+};
+
 struct json_object {
   __JSON_COMMON();
   struct json_common *member;
   //struct json_common *(*add_member)(const struct json_common *, struct json_common *);
 };
 
+
+
+/* object, value 割当
+ */
 extern struct json_object *
 json_object_new(const char *key);
+
+extern struct json_array *
+json_array_new(const char *key);
 
 extern struct json_common *
 json_value_new(const int type, const size_t size,
     const char *key, const void *value);
 
+extern struct json_number *
+json_number_new(const char *key, const long value);
+
+extern struct json_double *
+json_double_new(const char *key, const double value);
+
+extern struct json_boolean *
+json_boolean_new(const char *key, const bool_t value);
+
+extern struct json_string *
+json_string_new(const char *key, const char *value);
+
+
+/* object, value, array 追加
+ */
+extern struct json_common *
+json_add(struct json_common *this, struct json_common *target);
+
+extern struct json_object *
+json_add_member(struct json_object *this, struct json_common *target);
+
+extern struct json_array *
+json_array_add(struct json_array *this, struct json_common *target);
+
+
+/*
+ */
+extern struct json_common *
+json_value_free(struct json_common *p);
+
+extern void
+json_array_free(struct json_array *jarr);
+
 extern void
 json_object_free(struct json_object *jo);
 
+
+/*
+ */
 extern bool_t
 json_contains_key(const struct json_object *jo, const char *key);
 
@@ -81,9 +134,13 @@ extern struct json_common *
 json_object_get_value(const struct json_object *jo, const char *key);
 
 extern size_t
-json_count(const struct json_object *jo);
+json_object_count(const struct json_object *jo);
+
+extern size_t
+json_array_count(const struct json_array *ja);
+
 
 extern void
-json_print(const struct json_object *jo);
+json_to_string(const struct json_common *this);
 
 #endif
