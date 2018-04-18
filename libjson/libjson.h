@@ -140,7 +140,7 @@ extern size_t
 json_array_count(const struct json_array *ja);
 
 
-extern void
+extern char *
 json_to_string(const struct json_common *this);
 
 #endif
