@@ -4,7 +4,9 @@ FLAGS  = -g -Wall
 TARGET = libstringbuilder.so
 OBJDIR = objs
 
-SOURCE = $(shell find src/ -name \*.c)
+SOURCE = $(filter-out \
+				 ./test/%.c, \
+				 $(shell find . -name \*.c))
 
 default:
 	make $(TARGET)
