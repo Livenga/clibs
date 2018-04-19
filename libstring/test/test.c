@@ -17,14 +17,26 @@ int
 main(int argc, char *argv[]) {
   const char *hello = "Hello, World!";
 
-  char *tmp;
+  size_t size;
+  char *tmp, **tmp_array;
   string_t *string;
 
   string = string_split(hello, ",");
   _print_string((const string_t *)string);
-  string_free(string);
   //Hello
   // World!
+
+  tmp_array = string_to_array(string, &size);
+  {
+    size_t i;
+    for(i = 0; i < size; ++i) {
+      printf("%3ld: %s\n", i, *(tmp_array + i));
+    }
+  }
+  free((void *)tmp_array);
+
+  string_free(string);
+
 
   tmp = string_delete_new("Hello, World! | Test String", "Hello, ");
   fprintf(stdout, "%s\n", tmp);
