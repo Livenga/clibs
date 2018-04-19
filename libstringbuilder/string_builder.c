@@ -97,12 +97,13 @@ string_builder_free(struct string_builder *this) {
 struct string_builder *
 string_builder_append(struct string_builder *this,
     const char *str) {
-  const size_t new_size = strlen(str);
+  size_t new_size;
   struct string_builder *new = NULL, *sb = NULL;
 
 
-  if(this == NULL || new_size == 0)
+  if(this == NULL || str == NULL)
     goto end;
+  new_size = strlen(str);
 
   if((new = string_builder_new()) == NULL) {
     eprintf(stderr, "string_builder_new(3)", NULL);
@@ -116,9 +117,8 @@ string_builder_append(struct string_builder *this,
   new->next   = NULL;
   new->size   = new_size;
   if((new->buf = (char *)calloc(new_size, sizeof(char))) == NULL) {
-    new->size = -1;
-    new->buf  = NULL;
-    goto end;
+    free((void *)new); new = NULL;
+    return this;
   }
 
   strncpy(new->buf, str, new_size);
