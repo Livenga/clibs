@@ -25,6 +25,16 @@ extern char *
 string_delete(char *this, /* 対象文字列 */
     const char *target    /* 削除文字 */);
 
+/* string_t のデータ数を取得 */
+extern size_t
+string_count(const string_t *this /* 対象 */);
+
+/**/
+extern char **
+string_to_array(const string_t *this, /* 対象 */
+    size_t *size                      /* データサイズ */);
+
+
 /* 対象文字列から指定された文字列の削除
    戻り値は新規に割り当てられる.
  */

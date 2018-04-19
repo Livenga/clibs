@@ -121,6 +121,49 @@ string_delete_new(const char *this, /* 対象文字列 */
 }
 
 
+/* string_t のデータ数を取得 */
+size_t
+string_count(const string_t *this /* 対象 */) {
+  size_t size;
+  string_t *p_cursor;
+
+
+  if(this == NULL) { return -1; }
+
+  size = 0;
+  for(p_cursor = (string_t *)this; p_cursor != NULL; p_cursor = p_cursor->next) {
+    ++size;
+  }
+
+  return size;
+}
+
+/**/
+char **
+string_to_array(const string_t *this, /* 対象 */
+    size_t *size                      /* データサイズ */) {
+  const string_t *p_cursor;
+
+  size_t i, count;
+  char **p_ret;
+
+
+  if(this == NULL) {
+    return NULL;
+  }
+
+  count = string_count(this);
+  if(size != NULL) { *size = count; }
+
+  p_ret = (char **)calloc(count, sizeof(char *));
+
+  for(p_cursor = this, i = 0; p_cursor != NULL; p_cursor = p_cursor->next, ++i) {
+    *(p_ret + i) = p_cursor->string;
+  }
+
+  return p_ret;
+}
+
 /* 解放 */
 void
 string_free(string_t *this /* 対象の先頭アドレス */) {
