@@ -51,11 +51,14 @@ _last_pointer(struct string_builder *this) {
  * < struct string_builder * */
 struct string_builder *
 string_builder_new(void) {
-  struct string_builder *sb = NULL;
+  struct string_builder *sb;
+  
+  
+  sb = NULL;
 
   if((sb = _sballoc()) != NULL) {
     sb->next   = NULL;
-    sb->append = string_builder_append;
+    sb->buf    = NULL;
   }
 
   return sb;
@@ -68,23 +71,31 @@ string_builder_new(void) {
  * < void */
 void
 string_builder_free(struct string_builder *this) {
-  struct string_builder *sb = this, *next = NULL;
+  struct string_builder *sb, *next;
 
-  while(sb != NULL) {
+  if(this == NULL) {
+    return;
+  }
+  
+  sb   = this;
+  next = NULL;
+
+  do {
     next = sb->next;
 
     if(sb->buf != NULL) {
-      memset((void *)sb->buf, '\0', strlen(sb->buf));
+      //memset((void *)sb->buf, '\0', strlen(sb->buf));
       //memset((void *)sb->buf, '\0', sb->size);
 
-      sb->size   = 0;
-      sb->append = NULL;
       free((void *)sb->buf);
+      sb->buf    = NULL;
     }
+
+    memset((void *)sb, '\0', sizeof(struct string_builder));
     free((void *)sb);
 
     sb = next;
-  }
+  } while(sb != NULL);
 }
 
 /**
@@ -95,15 +106,25 @@ string_builder_free(struct string_builder *this) {
  * < struct string_builder *: 追加した struct string_builder のポインタ
  */
 struct string_builder *
-string_builder_append(struct string_builder *this,
+string_builder_append(
+    struct string_builder *this,
     const char *str) {
   size_t new_size;
   struct string_builder *new = NULL, *sb = NULL;
 
 
-  if(this == NULL || str == NULL)
-    goto end;
+  if(this == NULL || str == NULL) {
+    return NULL;
+  }
+
   new_size = strlen(str);
+  if(this->buf == NULL) {
+    this->size = new_size;
+    this->buf = (char *)calloc(new_size + 1, sizeof(char));
+    strncpy(this->buf, str, new_size);
+
+    return this;
+  }
 
   if((new = string_builder_new()) == NULL) {
     eprintf(stderr, "string_builder_new(3)", NULL);
@@ -116,14 +137,14 @@ string_builder_append(struct string_builder *this,
 
   new->next   = NULL;
   new->size   = new_size;
-  if((new->buf = (char *)calloc(new_size, sizeof(char))) == NULL) {
-    free((void *)new); new = NULL;
+  if((new->buf = (char *)calloc(new_size + 1, sizeof(char))) == NULL) {
+    free((void *)new);
+    new = NULL;
     return this;
   }
 
   strncpy(new->buf, str, new_size);
 
-end:
   return new;
 }
 
@@ -165,7 +186,9 @@ string_builder_to_string(const struct string_builder *this) {
   char *buf = NULL;
 
 
-  if(this == NULL) return NULL;
+  if(this == NULL) {
+    return NULL;
+  }
 
   size = string_builder_length(this);
 
@@ -175,7 +198,9 @@ string_builder_to_string(const struct string_builder *this) {
   }
 
   for(sb = this; sb != NULL; sb = sb->next) {
-    strncat(buf, sb->buf, sb->size);
+    if(sb->buf != NULL) {
+      strncat(buf, sb->buf, sb->size);
+    }
   }
 
 

@@ -5,9 +5,8 @@
 struct string_builder {
   size_t size;
   char   *buf;
-  struct string_builder *next;
 
-  struct string_builder *(*append)(struct string_builder *, const char *);
+  struct string_builder *next;
 };
 
 
