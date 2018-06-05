@@ -14,6 +14,9 @@ default:
 $(TARGET):$(SOURCE)
 	$(CC) -shared -fPIC -o $@ $^ $(FLAGS)
 
+static:$(SOURCE)
+	$(CC) -c $(SOURCE) -static
+	ar rcs -o libstringbuilder.a $(patsubst %.c, %.o, $^)
 
 clear:
 	rm $(TARGET)
