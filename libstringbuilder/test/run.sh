@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-gcc -o main main.c -I ../src -L ../ -lstringbuilder
+gcc -o main main.c -I../ -L../ -lstringbuilder
 
 if [ $? -eq 0 ]
 then
