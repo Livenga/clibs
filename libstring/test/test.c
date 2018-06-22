@@ -53,22 +53,46 @@ main(int argc, char *argv[]) {
   printf("%s\n", string_delete("Hello, World!", "Hello, "));
 #endif
 
-  printf("* \033[1;37mstring_builder_t test\033[0m\n");
-  string_t *sb2s;
+  //
+  //
+  //
+
+  FILE *fp;
+  char buf[1024];
+
+  string_t *_string;
   string_builder_t *sb, *_sb;
 
-  sb = string_builder_new("Hello, ");
+  sb = NULL;
+  if((fp = fopen("./random_lines", "r")) != NULL) {
+    memset((void *)buf, '\0', sizeof(buf));
 
-  _sb = sb;
-  _sb = string_builder_add(_sb, "Wor");
-  _sb = string_builder_add(_sb, "ld!");
+    while(fgets((char *)buf, 1024, fp) != NULL) {
+      char *_pln;
 
-  sb2s = string_builder_to_string(sb);
+      if((_pln = strchr(buf, '\n')) != NULL) {
+        *_pln = '\0';
+      }
 
-  printf("** response: %s\n", sb2s->string);
+      if(sb == NULL) {
+        sb  = string_builder_new(buf);
+        _sb = sb;
+      } else {
+        _sb = string_builder_add(_sb, buf);
+      }
 
-  string_builder_free(sb);
-  string_free(sb2s);
+      memset((void *)buf, '\0', sizeof(buf));
+    }
+
+    _string = string_builder_to_string(sb);
+    printf("%s\n", _string->string);
+
+    string_free(_string);
+    string_builder_free(sb);
+
+    fclose(fp);
+  }
+
 
   return 0;
 }
