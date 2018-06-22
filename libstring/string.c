@@ -20,7 +20,8 @@ string_new(void) {
     return NULL;
   }
 
-  str->size   = 0; str->string = NULL;
+  str->length = 0;
+  str->string = NULL;
   str->next   = NULL;
 
   return str;
@@ -53,19 +54,19 @@ string_split(const char *str, /* 対象文字列 */
     if((str_new = string_new()) == NULL) { break; }
 
     if((p_cursor = strstr(p, sep)) != NULL) {
-      str_new->size = p_cursor - p;
+      str_new->length = p_cursor - p;
     } else {
-      str_new->size = sizeof(char) * _len - (p - buf);
+      str_new->length = sizeof(char) * _len - (p - buf);
       is_break      = 1;
     }
 
-    str_new->string = (char *)malloc(str_new->size);
+    str_new->string = (char *)malloc(str_new->length);
     if(str_new->string == NULL) {
       free((void *)str_new);
       break;
     }
-    memset((void *)str_new->string, '\0', str_new->size);
-    memmove((void *)str_new->string, p, str_new->size);
+    memset((void *)str_new->string, '\0', str_new->length);
+    memmove((void *)str_new->string, p, str_new->length);
 
     if(str_root == NULL) {
       str_root = str_new;
@@ -177,14 +178,160 @@ string_free(string_t *this /* 対象の先頭アドレス */) {
     p_next = p->next;
 
     if(p->string != NULL) {
-      memset((void *)p->string, '\0', p->size);
+      memset((void *)p->string, '\0', p->length);
       free((void *)p->string); p->string = NULL;
     }
-    p->size   = 0L;
+    p->length   = 0L;
     p->string = NULL;
     p->next   = NULL;
     free((void *)p);
 
     p = p_next;
   }
+}
+
+
+/**
+ *
+ */
+string_builder_t *
+string_builder_new(const char *str) {
+  string_builder_t *sb;
+
+  sb = NULL;
+  if(str == NULL) {
+    return NULL;
+  }
+
+  sb = (string_builder_t *)calloc(1, sizeof(string_builder_t));
+  if(sb == NULL) {
+    return sb;
+  }
+
+  sb->length = strlen(str);
+  sb->data = (char *)calloc(sb->length + 1, sizeof(char));
+  sb->next = NULL;
+
+  if(sb->data == NULL) {
+    memset((void *)sb, '\0', sizeof(string_builder_t));
+    free((void *)sb);
+    sb = NULL;
+  }
+
+  strncpy(sb->data, str, sb->length);
+
+  return sb;
+}
+
+string_builder_t *
+string_builder_add(string_builder_t *this, const char *str) {
+  string_builder_t *sb, *target;
+
+
+  if(str == NULL) {
+    return this;
+  }
+
+  if(this->next != NULL) {
+    for(sb = this; sb != NULL; sb = sb->next) {
+      target = sb;
+    }
+  } else {
+    target = this;
+  }
+
+  sb = string_builder_new(str);
+  if(sb == NULL) {
+    return NULL;
+  }
+
+  target->next = sb;
+  return sb;
+}
+
+
+void
+string_builder_free(string_builder_t *this) {
+  string_builder_t *next;
+
+
+  if(this == NULL) {
+    return;
+  }
+
+  do {
+    next = this->next;
+
+    if(this->data != NULL) {
+      memset((void *)this->data, '\0', sizeof(char) * this->length);
+      free((void *)this->data);
+      this->data = NULL;
+    }
+    memset((void *)this, '\0', sizeof(string_builder_t));
+    free(this);
+
+    this = next;
+  } while(this != NULL);
+}
+
+
+size_t
+string_builder_length(const string_builder_t *this) {
+  const string_builder_t *next;
+  size_t length;
+
+  length = 0;
+  for(next = this; next != NULL; next = next->next) {
+    if(next->data != NULL) {
+#if 1
+      length += next->length;
+#else
+      length += strlen(next->data);
+#endif
+    }
+  }
+
+  return length;
+}
+
+
+string_t *
+string_builder_to_string(const string_builder_t *this) {
+  const string_builder_t *next;
+  string_t *ret;
+
+
+  if(this == NULL) {
+    return NULL;
+  }
+
+  ret = string_new();
+  if(ret == NULL) {
+    return NULL;
+  }
+
+  ret->length = string_builder_length(this);
+
+  ret->string = (char *)calloc(ret->length + 1, sizeof(char));
+  if(ret->string == NULL) {
+    memset((void *)ret, '\0', sizeof(string_t));
+    free((void *)ret);
+    ret = NULL;
+
+    return NULL;
+  }
+
+
+  size_t l_cur;
+  for(l_cur = 0, next = this; next != NULL; next = next->next) {
+    if(next->length <= 0 || next->data == NULL) {
+      continue;
+    }
+
+    strncpy(ret->string + l_cur, (const char *)next->data, next->length);
+
+    l_cur += next->length;
+  }
+
+  return ret;
 }
