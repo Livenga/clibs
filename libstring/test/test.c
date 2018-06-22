@@ -53,5 +53,22 @@ main(int argc, char *argv[]) {
   printf("%s\n", string_delete("Hello, World!", "Hello, "));
 #endif
 
+  printf("* \033[1;37mstring_builder_t test\033[0m\n");
+  string_t *sb2s;
+  string_builder_t *sb, *_sb;
+
+  sb = string_builder_new("Hello, ");
+
+  _sb = sb;
+  _sb = string_builder_add(_sb, "Wor");
+  _sb = string_builder_add(_sb, "ld!");
+
+  sb2s = string_builder_to_string(sb);
+
+  printf("** response: %s\n", sb2s->string);
+
+  string_builder_free(sb);
+  string_free(sb2s);
+
   return 0;
 }
