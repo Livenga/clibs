@@ -113,11 +113,15 @@ _html_parse(char *html_str) {
     }
     memcpy((void *)tag, (const void *)p_lt + 1, sizeof(char) * (_p_name - p_lt - 1));
 
-    if(*(p_lt + 1) != '/') {
+#if 1
+    if(_p_name != p_gt && *(p_lt + 1) != '/') {
       html_attribute_t *_attr;
-      _attr = html_attribute_parse(p_lt + 1, p_gt);
+
+      //_attr = html_attribute_parse(p_lt + 1, p_gt);
+      _attr = html_attribute_parse(_p_name, p_gt);
       html_attribute_free(_attr);
     }
+#endif
 
 
     p_html = p_gt;

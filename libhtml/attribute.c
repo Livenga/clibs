@@ -75,6 +75,7 @@ html_attribute_parse(char *p_start, char *p_end) {
       if(_attr_ptr->name == NULL) {
         break;
       }
+
       memcpy((void *)_attr_ptr->name, (const void *)p_start,
           sizeof(char) * _attr_ptr->name_size);
 
@@ -85,8 +86,10 @@ html_attribute_parse(char *p_start, char *p_end) {
       if(_attr_ptr->value == NULL) {
         break;
       }
+
       memcpy((void *)_attr_ptr->value, (const void *)p_equal,
           sizeof(char) * _attr_ptr->value_size);
+
     } else {
       // 特性の名称取得
       _attr_ptr->name_size = _p_end - p_start;
@@ -94,6 +97,7 @@ html_attribute_parse(char *p_start, char *p_end) {
       if(_attr_ptr == NULL) {
         break;
       }
+
       memcpy((void *)_attr_ptr->name, (const void *)p_start,
           sizeof(char) * _attr_ptr->name_size);
     }
